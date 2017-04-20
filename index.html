@@ -1,0 +1,373 @@
+<!-- Prototipo de Proyecto de Reciclaje
+    Computación y Sociedad
+    Tecnológico de Costa Rica
+    Gabriela Garro, Carlos Vargas -->
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Prototipo de página X">
+    <meta name="author" content="Gabriela Garro, Carlos Vargas">
+
+    <title>Proyecto X</title>
+    <link rel="icon" href="img/icon.ico">
+
+    <!-- Bootstrap Core CSS -->
+    <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom Fonts -->
+    <link href="vendor/font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+    <link href="https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic" rel="stylesheet" type="text/css">
+    <link href="https://fonts.googleapis.com/css?family=Montserrat:400,700" rel="stylesheet" type="text/css">
+
+    <!-- DataTables CSS -->
+    <link href="css/datatables/dataTables.bootstrap.css" rel="stylesheet">
+
+    <!-- DataTables Responsive CSS -->
+    <link href="css/datatables/responsive.dataTables.css" rel="stylesheet">
+
+    <!-- Theme CSS -->
+    <link href="css/grayscale.css" rel="stylesheet">
+
+    <!-- Datatables JS -->
+    <script src="https://code.jquery.com/jquery-1.12.3.js"></script>
+    <script src="https://cdn.datatables.net/1.10.12/js/jquery.dataTables.min.js"></script>
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+</head>
+
+<script type="text/javascript">
+    arrayColegios = [
+        {nombre:"Colegio Seminario", latitud:9.917619, longitud:-84.074927, poblacion:800,
+            arrayMeses:[{mes:"02", anno:"2016", plastico:5, papel:10, aluminio:2, vidrio:3.1},
+                {mes:"03", anno:"2016", plastico:5.5, papel:9.8, aluminio:2.3, vidrio:1.4}]},
+        {nombre:"Liceo de Costa Rica", latitud:9.925503, longitud:-84.075671, poblacion:1000,
+            arrayMeses:[{mes:"02", anno:"2016", plastico:8.7, papel:12, aluminio:5.2, vidrio:1},
+                {mes:"03", anno:"2016", plastico:18.7, papel:20, aluminio:5.8, vidrio:2}]}
+        ];
+    // Google Maps Scripts
+    var map = null;
+    // Centro del mapa por defecto
+    var SJLatitud = 9.917619;
+    var SJLongitud = -84.074927;
+    // Colores de la gradiente
+    var rojo = '#F44336';
+    var naranja = '#FF9800';
+    var amarillo = '#FFEB3B';
+    var lima = '#8BC34A';
+    var verde = '#4CAF50';
+
+    function initMap() {
+        map = new google.maps.Map(document.getElementById('map'), {
+          center: {lat: SJLatitud, lng: SJLongitud},
+          zoom: 14,
+          scrollwheel: false
+        });
+        //Iterar por los colegios
+        var markers = [];
+        var infowindows  = [];
+        var cocientes = [];
+        var arrayColegiosDataTable = [];
+        for (var i = 0; i < arrayColegios.length; i++) {
+            //Obtener los datos de reciclaje en los meses indicados por el usuario
+            var mes1 = document.getElementById('mes-inicio').value;
+            var anno1 = document.getElementById('anno-inicio').value;
+            var mes2 = document.getElementById('mes-final').value;
+            var anno2 = document.getElementById('anno-final').value;
+            //Variables para llenar infoWindow
+            var plastico = 0;
+            var papel = 0;
+            var aluminio = 0;
+            var vidrio = 0;
+            var cocienteReciclaje = 0;
+            //Iterar por los meses registrados del colegio actual
+            for (var j = 0; j < arrayColegios[i].arrayMeses.length; j++) {
+                if (parseInt(arrayColegios[i].arrayMeses[j].anno) >= parseInt(anno1) &&
+                    parseInt(arrayColegios[i].arrayMeses[j].mes) >= parseInt(mes1) &&
+                    parseInt(arrayColegios[i].arrayMeses[j].anno) <= parseInt(anno2) &&
+                    parseInt(arrayColegios[i].arrayMeses[j].mes) <= parseInt(mes2) ) {
+                    plastico += arrayColegios[i].arrayMeses[j].plastico;
+                    papel += arrayColegios[i].arrayMeses[j].papel;
+                    aluminio += arrayColegios[i].arrayMeses[j].aluminio;
+                    vidrio += arrayColegios[i].arrayMeses[j].vidrio;
+                }
+            }
+            //TO DO: Esto está mal calculado porque no toma en cuenta que la población de los colegios
+            // puede variar de año en año. Se tiene que cambiar por una población mensual y hacer
+            // un cociente promediado de todos los meses que pidió el usuario.
+            cocienteReciclaje = (plastico + papel + aluminio + vidrio) / arrayColegios[i].poblacion;
+            cocientes.push(cocienteReciclaje);
+            //Contenido de infowindow actual
+            stringContent = '<p class="infoWindowTitle">'+ arrayColegios[i].nombre + '</p>'+
+            '<div class="infoWindowBody"><b>'+
+            cocienteReciclaje + ' kg por estudiante</b><br><br>' +
+            'Plástico: ' + plastico + ' kg<br>' + //TO DO: Agregar íconos
+            'Papel: ' + papel + ' kg<br>' +
+            'Aluminio: ' + aluminio + 'kg<br>' +
+            'Vidrio: ' + vidrio + ' kg<br>' +
+            '</div>';
+            
+            markers[i] = new google.maps.Marker({
+                position: new google.maps.LatLng(arrayColegios[i].latitud, arrayColegios[i].longitud),
+                map: map,
+                title: arrayColegios[i].nombre,
+                icon: {
+                    path: fontawesome.markers.CIRCLE,
+                    scale: 0.5,
+                    strokeWeight: 0,
+                    strokeColor: 'black',
+                    strokeOpacity: 0,
+                    fillColor: '#f8ae5f',
+                    fillOpacity: 0.7
+                },
+            });
+
+            infowindows[i] = new google.maps.InfoWindow({
+                content: stringContent
+            });
+            google.maps.event.addListener(markers[i], 'click', function(innerKey) {
+                return function() {
+                    infowindows[innerKey].open(map, markers[innerKey]);
+                    //TO DO: subrayar en DataTable
+                }
+            }(i));
+            //Llenar el array para el DataTable
+            arrayColegiosDataTable.push([arrayColegios[i].nombre, arrayColegios[i].poblacion,
+                cocienteReciclaje, plastico, papel, aluminio, vidrio]);
+        }
+        //Definición de DataTable
+        if ($.fn.DataTable.isDataTable("#colegios")) {
+            $('#colegios').DataTable().destroy();
+        }
+        $('#colegios').DataTable( {
+            data: arrayColegiosDataTable,
+            columns: [
+                {title: "Colegio"},
+                {title: "Cant. estudiantes"},
+                {title: "Reciclaje (kg/estudiante)"},
+                {title: "Plástico (kg)"},
+                {title: "Papel (kg)"},
+                {title: "Aluminio (kg)"},
+                {title: "Vidrio (kg)"}
+            ]
+        } );
+        //Modificar los colores de markers y configurar la gradiente
+        var gradienteRojo = Math.min.apply( Math, cocientes );
+        document.getElementById('gradiente-rojo').innerHTML = gradienteRojo + 'kg';
+        var gradienteVerde = Math.max.apply( Math, cocientes );
+        document.getElementById('gradiente-verde').innerHTML = gradienteVerde + 'kg';
+        //Definir colores de cada marker
+        var stepCocientes = (gradienteVerde-gradienteRojo)/5;
+        var color = '#FFFFFF';
+        for (var i = 0; i < markers.length; i++) {
+            if (gradienteRojo <= cocientes[i] && 
+                cocientes[i] < (gradienteRojo + stepCocientes) ) {
+                color = rojo;
+            }
+            else if ((gradienteRojo + stepCocientes) <= cocientes[i] &&
+                cocientes[i] <  (gradienteRojo + stepCocientes*2) ) {
+                color = naranja;
+            }
+            else if ((gradienteRojo + stepCocientes*2) <= cocientes[i] &&
+                cocientes[i] < (gradienteRojo + stepCocientes*3) ) {
+                color = amarillo;
+            }
+            else if ((gradienteRojo + stepCocientes*3) <= cocientes[i] &&
+                cocientes[i] < (gradienteRojo + stepCocientes*4) ) {
+                color: lima;
+            }
+            else {
+                color = verde;
+            }
+            markers[i].icon.fillColor = color;
+        }
+    }
+
+    function reloadMap () {
+        initMap();
+    }
+
+</script>
+
+<body id="page-top" data-spy="scroll" data-target=".navbar-fixed-top">
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-custom navbar-fixed-top" role="navigation">
+        <div class="container">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-main-collapse">
+                    MENÚ <i class="fa fa-bars"></i>
+                </button>
+                <a class="navbar-brand page-scroll" href="#page-top">
+                    <i class="fa fa-recycle" aria-hidden="true"></i> <span class="light">Proyecto</span>X
+                </a>
+            </div>
+
+            <!-- Collect the nav links, forms, and other content for toggling -->
+            <div class="collapse navbar-collapse navbar-right navbar-main-collapse">
+                <ul class="nav navbar-nav">
+                    <!-- Hidden li included to remove active class from about link when scrolled up past about section -->
+                    <li class="hidden">
+                        <a href="#page-top"></a>
+                    </li>
+                    <li>
+                        <a class="page-scroll" href="#mapa">Mapa interactivo</a>
+                    </li>
+                    <li>
+                        <a class="page-scroll" href="#detalles">Detalles</a>
+                    </li>
+                    <!--<li>
+                        <a class="page-scroll" href="#comparacion">Comparación</a>
+                    </li>-->
+                    <li>
+                        <a class="page-scroll" href="#">Fuentes</a>
+                    </li>
+                </ul>
+            </div>
+            <!-- /.navbar-collapse -->
+        </div>
+        <!-- /.container -->
+    </nav>
+
+    <!-- Intro Header -->
+    <header class="intro">
+        <div class="intro-body">
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-8 col-md-offset-2">
+                        <h1 class="brand-heading">ProyectoX</h1>
+                        <p class="intro-text">Una descripción acerca del proyecto
+                            <br></p>
+                        <a href="#mapa" class="btn btn-circle page-scroll">
+                            <i class="fa fa-angle-double-down animated"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- About Section -->
+    <section id="mapa" class="container content-section text-center">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2">
+                <br><h2>Mapa interactivo de reciclaje en colegios</h2>
+            </div>
+            <div class="col-md-6 form-group">
+                <div class="col-lg-4">
+                    <h3>Desde</h3>
+                </div>
+                <div class="col-lg-5">
+                    <select id="mes-inicio" class="form-control" onchange="reloadMap();">
+                        <option value="02">Febrero</option>
+                        <option value="03">Marzo</option>
+                    </select>
+                </div>
+                <div class="col-lg-3">
+                    <select id="anno-inicio" class="form-control" onchange="reloadMap();">
+                        <option value="2016">2016</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-6 form-group">
+                <div class="col-lg-4">
+                    <h3>Hasta</h3>
+                </div>
+                <div class="col-lg-5">
+                    <select id="mes-final" class="form-control" onchange="reloadMap();">
+                        <option value="02">Febrero</option>
+                        <option value="03">Marzo</option>
+                    </select>
+                </div>
+                <div class="col-lg-3">
+                    <select id="anno-final" class="form-control" onchange="reloadMap();">
+                        <option value="2016">2016</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- Map Section -->
+    <div id="map"></div>
+    <div class="container text-center">
+        <div class="row">
+            <div class="col-md-4">
+                <h3 class="rojo" id="gradiente-rojo">?</h3>
+            </div>
+            <div class="col-md-4">
+                <img src="img/gradiente.png" class="gradiente">
+            </div>
+            <div class="col-md-4">
+                <h3 class="verde" id="gradiente-verde">?</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- Download Section -->
+    <section id="detalles" class="content-section text-center">
+        <div class="download-section">
+            <div class="container">
+                <div class="col-lg-8 col-lg-offset-2">
+                    <h2>Detalles de colegio</h2>
+                </div>
+            </div>
+            <div class="container roboto-text">
+                <table id="colegios" class="table table-inverse" cellspacing="0" width="100%"></table>
+            </div>
+        </div>
+    </section>
+
+    <!-- <section id="comparacion" class="container content-section text-center">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2">
+                <h2>Comparación de colegios</h2>
+            </div>
+        </div>
+    </section>-->
+
+    <!-- Footer -->
+    <footer>
+        <div class="container text-center">
+            <p>Copyright &copy; Proyecto X 2017</p>
+        </div>
+    </footer>
+
+    <!-- jQuery -->
+    <script src="vendor/jquery/jquery.js"></script>
+
+    <!-- Bootstrap Core JavaScript -->
+    <script src="vendor/bootstrap/js/bootstrap.min.js"></script>
+
+    <!-- Plugin JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-easing/1.3/jquery.easing.min.js"></script>
+
+    <!-- Google Maps API -->
+    <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBJBUJXyF8XdzwaNzv2wH1TSQ6-SI5GfH0&callback=initMap">
+    </script>
+
+    <!-- Font Awesome markers -->
+    <script type="text/javascript" src="js/fontawesome-markers.min.js"></script>
+
+    <!-- DataTables JavaScript -->
+    <script src="js/datatables/jquery.dataTables.min.js"></script>
+    <script src="js/datatables/dataTables.bootstrap.min.js"></script>
+    <script src="js/datatables/dataTables.responsive.js"></script>
+
+    <!-- Theme JavaScript -->
+    <script src="js/grayscale.js"></script>
+
+</body>
+
+</html>
