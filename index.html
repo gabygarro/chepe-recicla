@@ -48,14 +48,63 @@
 </head>
 
 <script type="text/javascript">
-    arrayColegios = [
-        {nombre:"Colegio Seminario", latitud:9.917619, longitud:-84.074927, poblacion:800,
+    /*arrayColegios = [
+        {id:1, nombre:"Colegio Seminario", latitud:9.917619, longitud:-84.074927, poblacion:800,
             arrayMeses:[{mes:"02", anno:"2016", plastico:5, papel:10, aluminio:2, vidrio:3.1},
                 {mes:"03", anno:"2016", plastico:5.5, papel:9.8, aluminio:2.3, vidrio:1.4}]},
-        {nombre:"Liceo de Costa Rica", latitud:9.925503, longitud:-84.075671, poblacion:1000,
+        {id:2, nombre:"Liceo de Costa Rica", latitud:9.925503, longitud:-84.075671, poblacion:1000,
             arrayMeses:[{mes:"02", anno:"2016", plastico:8.7, papel:12, aluminio:5.2, vidrio:1},
                 {mes:"03", anno:"2016", plastico:18.7, papel:20, aluminio:5.8, vidrio:2}]}
-        ];
+        ];*/
+    arrayColegios = [];
+
+    //Google Spreadsheet
+    var colegio = [];
+    var mesxcolegio = [];
+
+    function getColegios(json) {
+      colegio = json.feed.entry;
+      readData();
+    }
+
+    function getMeses(json) {   
+      mesxcolegio = json.feed.entry;
+    }
+
+    function readData() {
+        //Cargar información de colegios
+        arrayColegios = [];
+        var numRows = colegio["length"] / 5; //Length of json / number of columns per row
+        for (var i = 1; i < numRows; i++) {
+            var row = {id:0, nombre:"", latitud:0, longitud:0, poblacion:0, arrayMeses: []};
+            var idActual = colegio[i*5]["gs$cell"]["$t"];
+            row["id"] = idActual;
+            row["nombre"] = colegio[i*5+1]["gs$cell"]["$t"];
+            row["latitud"] = parseFloat(colegio[i*5+2]["gs$cell"]["$t"]);
+            row["longitud"] = parseFloat(colegio[i*5+3]["gs$cell"]["$t"]);
+            row["poblacion"] = parseInt(colegio[i*5+4]["gs$cell"]["$t"]);
+            arrayColegios.push(row);
+        }
+        //Cargar información de los meses
+        var numRowsMeses = mesxcolegio["length"] / 7;
+        for (var i = 1; i < numRowsMeses; i++) {
+            var row = {mes:"", anno:"", plastico:0, papel:0, aluminio:0, vidrio:0};
+            var idActual = mesxcolegio[i*7]["gs$cell"]["$t"];
+            row["mes"] = mesxcolegio[i*7+1]["gs$cell"]["$t"];
+            row["anno"] = mesxcolegio[i*7+2]["gs$cell"]["$t"];
+            row["plastico"] = parseFloat(mesxcolegio[i*7+3]["gs$cell"]["$t"]);
+            row["papel"] = parseFloat(mesxcolegio[i*7+4]["gs$cell"]["$t"]);
+            row["aluminio"] = parseFloat(mesxcolegio[i*7+5]["gs$cell"]["$t"]);
+            row["vidrio"] = parseFloat(mesxcolegio[i*7+6]["gs$cell"]["$t"]);
+            var colegioIndex = arrayColegios.findIndex(function (colegio) {
+                return colegio["id"] === idActual;
+            });
+            if (colegioIndex != -1) {
+                arrayColegios[colegioIndex]["arrayMeses"].push(row);
+            }
+        }
+    }
+
     // Google Maps Scripts
     var map = null;
     // Centro del mapa por defecto
@@ -107,6 +156,8 @@
             // puede variar de año en año. Se tiene que cambiar por una población mensual y hacer
             // un cociente promediado de todos los meses que pidió el usuario.
             cocienteReciclaje = (plastico + papel + aluminio + vidrio) / arrayColegios[i].poblacion;
+            //cocienteReciclaje = Math.round(cocienteReciclaje * 100) / 100;
+            cocienteReciclaje = cocienteReciclaje.toFixed(3);
             cocientes.push(cocienteReciclaje);
             //Contenido de infowindow actual
             stringContent = '<p class="infoWindowTitle">'+ arrayColegios[i].nombre + '</p>'+
@@ -261,36 +312,40 @@
     <!-- About Section -->
     <section id="mapa" class="container content-section text-center">
         <div class="row">
-            <div class="col-lg-8 col-lg-offset-2">
+            <div class="col-md-12">
                 <br><h2>Mapa interactivo de reciclaje en colegios</h2>
-            </div>
+
             <div class="col-md-6 form-group">
-                <div class="col-lg-4">
+                <div class="col-md-4">
                     <h3>Desde</h3>
                 </div>
-                <div class="col-lg-5">
+                <div class="col-md-5">
                     <select id="mes-inicio" class="form-control" onchange="reloadMap();">
                         <option value="02">Febrero</option>
                         <option value="03">Marzo</option>
+                        <option value="04">Abril</option>
+                        <option value="05">Mayo</option>
                     </select>
                 </div>
-                <div class="col-lg-3">
+                <div class="col-md-3">
                     <select id="anno-inicio" class="form-control" onchange="reloadMap();">
                         <option value="2016">2016</option>
                     </select>
                 </div>
             </div>
             <div class="col-md-6 form-group">
-                <div class="col-lg-4">
+                <div class="col-md-4">
                     <h3>Hasta</h3>
                 </div>
-                <div class="col-lg-5">
+                <div class="col-md-5">
                     <select id="mes-final" class="form-control" onchange="reloadMap();">
                         <option value="02">Febrero</option>
                         <option value="03">Marzo</option>
+                        <option value="04">Abril</option>
+                        <option value="05" selected="">Mayo</option>
                     </select>
                 </div>
-                <div class="col-lg-3">
+                <div class="col-md-3">
                     <select id="anno-final" class="form-control" onchange="reloadMap();">
                         <option value="2016">2016</option>
                     </select>
@@ -352,11 +407,6 @@
     <!-- Plugin JavaScript -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-easing/1.3/jquery.easing.min.js"></script>
 
-    <!-- Google Maps API -->
-    <script async defer
-    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBJBUJXyF8XdzwaNzv2wH1TSQ6-SI5GfH0&callback=initMap">
-    </script>
-
     <!-- Font Awesome markers -->
     <script type="text/javascript" src="js/fontawesome-markers.min.js"></script>
 
@@ -364,6 +414,16 @@
     <script src="js/datatables/jquery.dataTables.min.js"></script>
     <script src="js/datatables/dataTables.bootstrap.min.js"></script>
     <script src="js/datatables/dataTables.responsive.js"></script>
+
+    <!-- Google Spreadsheets API -->
+    <script src="https://spreadsheets.google.com/feeds/cells/1AoWPzfVy3ApXZ9JmyUxIFFyKYQzvq6mIskDvsyRYRhQ/2/public/values?alt=json-in-script&callback=getMeses"></script>
+    <script src="https://spreadsheets.google.com/feeds/cells/1AoWPzfVy3ApXZ9JmyUxIFFyKYQzvq6mIskDvsyRYRhQ/1/public/values?alt=json-in-script&callback=getColegios"></script>
+
+    <!-- Google Maps API -->
+    <script
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBJBUJXyF8XdzwaNzv2wH1TSQ6-SI5GfH0&callback=initMap">
+    </script>
+
 
     <!-- Theme JavaScript -->
     <script src="js/grayscale.js"></script>
