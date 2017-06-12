@@ -48,6 +48,7 @@
 </head>
 
 <script type="text/javascript">
+    //Formato en el que debe de estar arrayColegios para ser leído bien por la página
     /*arrayColegios = [
         {id:1, nombre:"Colegio Seminario", latitud:9.917619, longitud:-84.074927, poblacion:800,
             arrayMeses:[{mes:"02", anno:"2016", plastico:5, papel:10, aluminio:2, vidrio:3.1},
@@ -64,17 +65,18 @@
 
     function getColegios(json) {
       colegio = json.feed.entry;
-      readData();
     }
 
     function getMeses(json) {   
       mesxcolegio = json.feed.entry;
+      readData();
+      readDataMeses();
     }
 
     function readData() {
         //Cargar información de colegios
         arrayColegios = [];
-        var numRows = colegio["length"] / 5; //Length of json / number of columns per row
+        var numRows = Math.floor(colegio["length"] / 5); //Length of json / number of columns per row
         for (var i = 1; i < numRows; i++) {
             var row = {id:0, nombre:"", latitud:0, longitud:0, poblacion:0, arrayMeses: []};
             var idActual = colegio[i*5]["gs$cell"]["$t"];
@@ -85,8 +87,11 @@
             row["poblacion"] = parseInt(colegio[i*5+4]["gs$cell"]["$t"]);
             arrayColegios.push(row);
         }
+    }
+
+    function readDataMeses() {
         //Cargar información de los meses
-        var numRowsMeses = mesxcolegio["length"] / 7;
+        var numRowsMeses = Math.floor(mesxcolegio["length"] / 7);
         for (var i = 1; i < numRowsMeses; i++) {
             var row = {mes:"", anno:"", plastico:0, papel:0, aluminio:0, vidrio:0};
             var idActual = mesxcolegio[i*7]["gs$cell"]["$t"];
@@ -103,6 +108,7 @@
                 arrayColegios[colegioIndex]["arrayMeses"].push(row);
             }
         }
+        console.log(arrayColegios);
     }
 
     // Google Maps Scripts
@@ -416,8 +422,8 @@
     <script src="js/datatables/dataTables.responsive.js"></script>
 
     <!-- Google Spreadsheets API -->
-    <script src="https://spreadsheets.google.com/feeds/cells/1AoWPzfVy3ApXZ9JmyUxIFFyKYQzvq6mIskDvsyRYRhQ/2/public/values?alt=json-in-script&callback=getMeses"></script>
     <script src="https://spreadsheets.google.com/feeds/cells/1AoWPzfVy3ApXZ9JmyUxIFFyKYQzvq6mIskDvsyRYRhQ/1/public/values?alt=json-in-script&callback=getColegios"></script>
+    <script src="https://spreadsheets.google.com/feeds/cells/1AoWPzfVy3ApXZ9JmyUxIFFyKYQzvq6mIskDvsyRYRhQ/2/public/values?alt=json-in-script&callback=getMeses"></script>
 
     <!-- Google Maps API -->
     <script
